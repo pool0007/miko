@@ -1,6 +1,7 @@
 class PopCatGame {
   constructor() {
     this.userCountry = null;
+    this.userCountryCode = null;
     this.userClicks = 0;
     this.totalClicks = 0;
     this.leaderboardData = [];
@@ -35,16 +36,113 @@ class PopCatGame {
   async detectCountry() {
     try {
       console.log('🌍 Detecting country...');
-      const res = await fetch('https://ipapi.co/json/');
-      const data = await res.json();
-      this.userCountry = data.country_name || 'Unknown';
-      this.userCountryStat.textContent = this.userCountry;
-      console.log('✅ Country detected:', this.userCountry);
+      
+      // PRIMERO: Intentar con nuestra API
+      const response = await fetch(`${this.baseURL}/api/ipinfo`);
+      if (response.ok) {
+        const data = await response.json();
+        this.userCountry = data.country;
+        this.userCountryCode = data.country_code;
+      } else {
+        throw new Error('Our API failed');
+      }
+      
     } catch (error) {
-      console.error('❌ Error detecting country:', error);
-      this.userCountry = 'Unknown';
-      this.userCountryStat.textContent = 'Not detected';
+      console.log('❌ Primary API failed, trying fallbacks...');
+      
+      // SEGUNDO: Intentar con ipapi.co directamente
+      try {
+        const response = await fetch('https://ipapi.co/json/');
+        const data = await response.json();
+        this.userCountry = data.country_name;
+        this.userCountryCode = data.country_code;
+      } catch (error2) {
+        // TERCERO: Último fallback
+        try {
+          const response = await fetch('https://api.country.is/');
+          const data = await response.json();
+          this.userCountry = this.getCountryNameFromCode(data.country);
+          this.userCountryCode = data.country;
+        } catch (error3) {
+          this.userCountry = 'Unknown';
+          this.userCountryCode = 'US';
+        }
+      }
     }
+    
+    this.userCountryStat.textContent = this.userCountry;
+    console.log('✅ Country detected:', this.userCountry, this.userCountryCode);
+  }
+
+  getCountryNameFromCode(code) {
+    const countryNames = {
+      'AF': 'Afghanistan', 'AX': 'Åland Islands', 'AL': 'Albania', 'DZ': 'Algeria',
+      'AS': 'American Samoa', 'AD': 'Andorra', 'AO': 'Angola', 'AI': 'Anguilla',
+      'AQ': 'Antarctica', 'AG': 'Antigua and Barbuda', 'AR': 'Argentina', 'AM': 'Armenia',
+      'AW': 'Aruba', 'AU': 'Australia', 'AT': 'Austria', 'AZ': 'Azerbaijan',
+      'BS': 'Bahamas', 'BH': 'Bahrain', 'BD': 'Bangladesh', 'BB': 'Barbados',
+      'BY': 'Belarus', 'BE': 'Belgium', 'BZ': 'Belize', 'BJ': 'Benin',
+      'BM': 'Bermuda', 'BT': 'Bhutan', 'BO': 'Bolivia', 'BQ': 'Bonaire',
+      'BA': 'Bosnia and Herzegovina', 'BW': 'Botswana', 'BV': 'Bouvet Island',
+      'BR': 'Brazil', 'IO': 'British Indian Ocean Territory', 'BN': 'Brunei Darussalam',
+      'BG': 'Bulgaria', 'BF': 'Burkina Faso', 'BI': 'Burundi', 'CV': 'Cabo Verde',
+      'KH': 'Cambodia', 'CM': 'Cameroon', 'CA': 'Canada', 'KY': 'Cayman Islands',
+      'CF': 'Central African Republic', 'TD': 'Chad', 'CL': 'Chile', 'CN': 'China',
+      'CX': 'Christmas Island', 'CC': 'Cocos Islands', 'CO': 'Colombia', 'KM': 'Comoros',
+      'CG': 'Congo', 'CD': 'Democratic Republic of the Congo', 'CK': 'Cook Islands',
+      'CR': 'Costa Rica', 'CI': 'Côte d\'Ivoire', 'HR': 'Croatia', 'CU': 'Cuba',
+      'CW': 'Curaçao', 'CY': 'Cyprus', 'CZ': 'Czech Republic', 'DK': 'Denmark',
+      'DJ': 'Djibouti', 'DM': 'Dominica', 'DO': 'Dominican Republic', 'EC': 'Ecuador',
+      'EG': 'Egypt', 'SV': 'El Salvador', 'GQ': 'Equatorial Guinea', 'ER': 'Eritrea',
+      'EE': 'Estonia', 'SZ': 'Eswatini', 'ET': 'Ethiopia', 'FK': 'Falkland Islands',
+      'FO': 'Faroe Islands', 'FJ': 'Fiji', 'FI': 'Finland', 'FR': 'France',
+      'GF': 'French Guiana', 'PF': 'French Polynesia', 'TF': 'French Southern Territories',
+      'GA': 'Gabon', 'GM': 'Gambia', 'GE': 'Georgia', 'DE': 'Germany',
+      'GH': 'Ghana', 'GI': 'Gibraltar', 'GR': 'Greece', 'GL': 'Greenland',
+      'GD': 'Grenada', 'GP': 'Guadeloupe', 'GU': 'Guam', 'GT': 'Guatemala',
+      'GG': 'Guernsey', 'GN': 'Guinea', 'GW': 'Guinea-Bissau', 'GY': 'Guyana',
+      'HT': 'Haiti', 'HM': 'Heard Island and McDonald Islands', 'VA': 'Holy See',
+      'HN': 'Honduras', 'HK': 'Hong Kong', 'HU': 'Hungary', 'IS': 'Iceland',
+      'IN': 'India', 'ID': 'Indonesia', 'IR': 'Iran', 'IQ': 'Iraq',
+      'IE': 'Ireland', 'IM': 'Isle of Man', 'IL': 'Israel', 'IT': 'Italy',
+      'JM': 'Jamaica', 'JP': 'Japan', 'JE': 'Jersey', 'JO': 'Jordan',
+      'KZ': 'Kazakhstan', 'KE': 'Kenya', 'KI': 'Kiribati', 'KP': 'North Korea',
+      'KR': 'South Korea', 'KW': 'Kuwait', 'KG': 'Kyrgyzstan', 'LA': 'Laos',
+      'LV': 'Latvia', 'LB': 'Lebanon', 'LS': 'Lesotho', 'LR': 'Liberia',
+      'LY': 'Libya', 'LI': 'Liechtenstein', 'LT': 'Lithuania', 'LU': 'Luxembourg',
+      'MO': 'Macao', 'MG': 'Madagascar', 'MW': 'Malawi', 'MY': 'Malaysia',
+      'MV': 'Maldives', 'ML': 'Mali', 'MT': 'Malta', 'MH': 'Marshall Islands',
+      'MQ': 'Martinique', 'MR': 'Mauritania', 'MU': 'Mauritius', 'YT': 'Mayotte',
+      'MX': 'Mexico', 'FM': 'Micronesia', 'MD': 'Moldova', 'MC': 'Monaco',
+      'MN': 'Mongolia', 'ME': 'Montenegro', 'MS': 'Montserrat', 'MA': 'Morocco',
+      'MZ': 'Mozambique', 'MM': 'Myanmar', 'NA': 'Namibia', 'NR': 'Nauru',
+      'NP': 'Nepal', 'NL': 'Netherlands', 'NC': 'New Caledonia', 'NZ': 'New Zealand',
+      'NI': 'Nicaragua', 'NE': 'Niger', 'NG': 'Nigeria', 'NU': 'Niue',
+      'NF': 'Norfolk Island', 'MK': 'North Macedonia', 'MP': 'Northern Mariana Islands',
+      'NO': 'Norway', 'OM': 'Oman', 'PK': 'Pakistan', 'PW': 'Palau',
+      'PS': 'Palestine', 'PA': 'Panama', 'PG': 'Papua New Guinea', 'PY': 'Paraguay',
+      'PE': 'Peru', 'PH': 'Philippines', 'PN': 'Pitcairn', 'PL': 'Poland',
+      'PT': 'Portugal', 'PR': 'Puerto Rico', 'QA': 'Qatar', 'RE': 'Réunion',
+      'RO': 'Romania', 'RU': 'Russia', 'RW': 'Rwanda', 'BL': 'Saint Barthélemy',
+      'SH': 'Saint Helena', 'KN': 'Saint Kitts and Nevis', 'LC': 'Saint Lucia',
+      'MF': 'Saint Martin', 'PM': 'Saint Pierre and Miquelon', 'VC': 'Saint Vincent and the Grenadines',
+      'WS': 'Samoa', 'SM': 'San Marino', 'ST': 'Sao Tome and Principe', 'SA': 'Saudi Arabia',
+      'SN': 'Senegal', 'RS': 'Serbia', 'SC': 'Seychelles', 'SL': 'Sierra Leone',
+      'SG': 'Singapore', 'SX': 'Sint Maarten', 'SK': 'Slovakia', 'SI': 'Slovenia',
+      'SB': 'Solomon Islands', 'SO': 'Somalia', 'ZA': 'South Africa', 'GS': 'South Georgia',
+      'SS': 'South Sudan', 'ES': 'Spain', 'LK': 'Sri Lanka', 'SD': 'Sudan',
+      'SR': 'Suriname', 'SJ': 'Svalbard and Jan Mayen', 'SE': 'Sweden', 'CH': 'Switzerland',
+      'SY': 'Syria', 'TW': 'Taiwan', 'TJ': 'Tajikistan', 'TZ': 'Tanzania',
+      'TH': 'Thailand', 'TL': 'Timor-Leste', 'TG': 'Togo', 'TK': 'Tokelau',
+      'TO': 'Tonga', 'TT': 'Trinidad and Tobago', 'TN': 'Tunisia', 'TR': 'Turkey',
+      'TM': 'Turkmenistan', 'TC': 'Turks and Caicos Islands', 'TV': 'Tuvalu',
+      'UG': 'Uganda', 'UA': 'Ukraine', 'AE': 'United Arab Emirates', 'GB': 'United Kingdom',
+      'US': 'United States', 'UM': 'United States Minor Outlying Islands', 'UY': 'Uruguay',
+      'UZ': 'Uzbekistan', 'VU': 'Vanuatu', 'VE': 'Venezuela', 'VN': 'Vietnam',
+      'VG': 'Virgin Islands (British)', 'VI': 'Virgin Islands (U.S.)', 'WF': 'Wallis and Futuna',
+      'EH': 'Western Sahara', 'YE': 'Yemen', 'ZM': 'Zambia', 'ZW': 'Zimbabwe'
+    };
+    return countryNames[code] || 'Unknown';
   }
 
   setupEventListeners() {
@@ -213,21 +311,23 @@ class PopCatGame {
     const item = document.createElement('div');
     item.className = 'leaderboard-item';
     
-    // Highlight user's country
     if (row.country === this.userCountry) {
       item.style.background = 'rgba(255, 235, 59, 0.2)';
-      item.style.border = '1px solid rgba(255, 235, 59, 0.5)';
     }
     
     const countryCode = this.getCountryCode(row.country);
-    const flagUrl = `https://flagcdn.com/w40/${countryCode}.png`;
-    const medal = this.getMedalEmoji(index + 1);
+    const medal = index < 3 ? ['🥇', '🥈', '🥉'][index] : index + 1;
+    
+    // SISTEMA MEJORADO DE BANDERAS
+    const flagUrl = this.getFlagUrl(countryCode);
     
     item.innerHTML = `
       <span class="rank">${medal}</span>
       <span class="country">
-        <img src="${flagUrl}" alt="${row.country}" class="country-flag" 
-             onerror="this.src='${this.getDefaultFlagUrl()}'">
+        <img src="${flagUrl}" 
+             alt="${row.country}" 
+             class="country-flag"
+             onerror="this.onerror=null; this.src='${this.getFallbackFlagUrl(countryCode)}'">
         ${row.country}
       </span>
       <span class="clicks">${parseInt(row.total_clicks).toLocaleString()}</span>
@@ -236,258 +336,104 @@ class PopCatGame {
     return item;
   }
 
-  getMedalEmoji(rank) {
-    switch(rank) {
-      case 1: return '🥇';
-      case 2: return '🥈';
-      case 3: return '🥉';
-      default: return rank;
-    }
+  getFlagUrl(countryCode) {
+    // Fuente principal - flagsapi (como PopCat)
+    return `https://flagsapi.com/${countryCode.toUpperCase()}/flat/64.png`;
+  }
+
+  getFallbackFlagUrl(countryCode) {
+    // Fuentes alternativas en caso de error
+    const fallbackSources = [
+      `https://countryflagsapi.com/png/${countryCode}`,
+      `https://flagcdn.com/w40/${countryCode}.png`,
+      `https://www.worldometers.info/img/flags/${countryCode}-flag.gif`
+    ];
+    
+    return fallbackSources[0];
   }
 
   getCountryCode(countryName) {
-    // Comprehensive country mapping with common variations
+    // Mapeo completo de nombres de países a códigos
     const countryMap = {
-      // North America
-      'United States': 'us',
-      'United States of America': 'us',
-      'USA': 'us',
-      'Canada': 'ca',
-      'Mexico': 'mx',
-      'México': 'mx',
+      'Afghanistan': 'af', 'Åland Islands': 'ax', 'Albania': 'al', 'Algeria': 'dz',
+      'American Samoa': 'as', 'Andorra': 'ad', 'Angola': 'ao', 'Anguilla': 'ai',
+      'Antarctica': 'aq', 'Antigua and Barbuda': 'ag', 'Argentina': 'ar', 'Armenia': 'am',
+      'Aruba': 'aw', 'Australia': 'au', 'Austria': 'at', 'Azerbaijan': 'az',
+      'Bahamas': 'bs', 'Bahrain': 'bh', 'Bangladesh': 'bd', 'Barbados': 'bb',
+      'Belarus': 'by', 'Belgium': 'be', 'Belize': 'bz', 'Benin': 'bj',
+      'Bermuda': 'bm', 'Bhutan': 'bt', 'Bolivia': 'bo', 'Bonaire': 'bq',
+      'Bosnia and Herzegovina': 'ba', 'Botswana': 'bw', 'Bouvet Island': 'bv',
+      'Brazil': 'br', 'British Indian Ocean Territory': 'io', 'Brunei Darussalam': 'bn',
+      'Bulgaria': 'bg', 'Burkina Faso': 'bf', 'Burundi': 'bi', 'Cabo Verde': 'cv',
+      'Cambodia': 'kh', 'Cameroon': 'cm', 'Canada': 'ca', 'Cayman Islands': 'ky',
+      'Central African Republic': 'cf', 'Chad': 'td', 'Chile': 'cl', 'China': 'cn',
+      'Christmas Island': 'cx', 'Cocos Islands': 'cc', 'Colombia': 'co', 'Comoros': 'km',
+      'Congo': 'cg', 'Democratic Republic of the Congo': 'cd', 'Cook Islands': 'ck',
+      'Costa Rica': 'cr', 'Côte d\'Ivoire': 'ci', 'Croatia': 'hr', 'Cuba': 'cu',
+      'Curaçao': 'cw', 'Cyprus': 'cy', 'Czech Republic': 'cz', 'Denmark': 'dk',
+      'Djibouti': 'dj', 'Dominica': 'dm', 'Dominican Republic': 'do', 'Ecuador': 'ec',
+      'Egypt': 'eg', 'El Salvador': 'sv', 'Equatorial Guinea': 'gq', 'Eritrea': 'er',
+      'Estonia': 'ee', 'Eswatini': 'sz', 'Ethiopia': 'et', 'Falkland Islands': 'fk',
+      'Faroe Islands': 'fo', 'Fiji': 'fj', 'Finland': 'fi', 'France': 'fr',
+      'French Guiana': 'gf', 'French Polynesia': 'pf', 'French Southern Territories': 'tf',
+      'Gabon': 'ga', 'Gambia': 'gm', 'Georgia': 'ge', 'Germany': 'de',
+      'Ghana': 'gh', 'Gibraltar': 'gi', 'Greece': 'gr', 'Greenland': 'gl',
+      'Grenada': 'gd', 'Guadeloupe': 'gp', 'Guam': 'gu', 'Guatemala': 'gt',
+      'Guernsey': 'gg', 'Guinea': 'gn', 'Guinea-Bissau': 'gw', 'Guyana': 'gy',
+      'Haiti': 'ht', 'Heard Island and McDonald Islands': 'hm', 'Holy See': 'va',
+      'Honduras': 'hn', 'Hong Kong': 'hk', 'Hungary': 'hu', 'Iceland': 'is',
+      'India': 'in', 'Indonesia': 'id', 'Iran': 'ir', 'Iraq': 'iq',
+      'Ireland': 'ie', 'Isle of Man': 'im', 'Israel': 'il', 'Italy': 'it',
+      'Jamaica': 'jm', 'Japan': 'jp', 'Jersey': 'je', 'Jordan': 'jo',
+      'Kazakhstan': 'kz', 'Kenya': 'ke', 'Kiribati': 'ki', 'North Korea': 'kp',
+      'South Korea': 'kr', 'Kuwait': 'kw', 'Kyrgyzstan': 'kg', 'Laos': 'la',
+      'Latvia': 'lv', 'Lebanon': 'lb', 'Lesotho': 'ls', 'Liberia': 'lr',
+      'Libya': 'ly', 'Liechtenstein': 'li', 'Lithuania': 'lt', 'Luxembourg': 'lu',
+      'Macao': 'mo', 'Madagascar': 'mg', 'Malawi': 'mw', 'Malaysia': 'my',
+      'Maldives': 'mv', 'Mali': 'ml', 'Malta': 'mt', 'Marshall Islands': 'mh',
+      'Martinique': 'mq', 'Mauritania': 'mr', 'Mauritius': 'mu', 'Mayotte': 'yt',
+      'Mexico': 'mx', 'Micronesia': 'fm', 'Moldova': 'md', 'Monaco': 'mc',
+      'Mongolia': 'mn', 'Montenegro': 'me', 'Montserrat': 'ms', 'Morocco': 'ma',
+      'Mozambique': 'mz', 'Myanmar': 'mm', 'Namibia': 'na', 'Nauru': 'nr',
+      'Nepal': 'np', 'Netherlands': 'nl', 'New Caledonia': 'nc', 'New Zealand': 'nz',
+      'Nicaragua': 'ni', 'Niger': 'ne', 'Nigeria': 'ng', 'Niue': 'nu',
+      'Norfolk Island': 'nf', 'North Macedonia': 'mk', 'Northern Mariana Islands': 'mp',
+      'Norway': 'no', 'Oman': 'om', 'Pakistan': 'pk', 'Palau': 'pw',
+      'Palestine': 'ps', 'Panama': 'pa', 'Papua New Guinea': 'pg', 'Paraguay': 'py',
+      'Peru': 'pe', 'Philippines': 'ph', 'Pitcairn': 'pn', 'Poland': 'pl',
+      'Portugal': 'pt', 'Puerto Rico': 'pr', 'Qatar': 'qa', 'Réunion': 're',
+      'Romania': 'ro', 'Russia': 'ru', 'Rwanda': 'rw', 'Saint Barthélemy': 'bl',
+      'Saint Helena': 'sh', 'Saint Kitts and Nevis': 'kn', 'Saint Lucia': 'lc',
+      'Saint Martin': 'mf', 'Saint Pierre and Miquelon': 'pm', 'Saint Vincent and the Grenadines': 'vc',
+      'Samoa': 'ws', 'San Marino': 'sm', 'Sao Tome and Principe': 'st', 'Saudi Arabia': 'sa',
+      'Senegal': 'sn', 'Serbia': 'rs', 'Seychelles': 'sc', 'Sierra Leone': 'sl',
+      'Singapore': 'sg', 'Sint Maarten': 'sx', 'Slovakia': 'sk', 'Slovenia': 'si',
+      'Solomon Islands': 'sb', 'Somalia': 'so', 'South Africa': 'za', 'South Georgia': 'gs',
+      'South Sudan': 'ss', 'Spain': 'es', 'Sri Lanka': 'lk', 'Sudan': 'sd',
+      'Suriname': 'sr', 'Svalbard and Jan Mayen': 'sj', 'Sweden': 'se', 'Switzerland': 'ch',
+      'Syria': 'sy', 'Taiwan': 'tw', 'Tajikistan': 'tj', 'Tanzania': 'tz',
+      'Thailand': 'th', 'Timor-Leste': 'tl', 'Togo': 'tg', 'Tokelau': 'tk',
+      'Tonga': 'to', 'Trinidad and Tobago': 'tt', 'Tunisia': 'tn', 'Turkey': 'tr',
+      'Turkmenistan': 'tm', 'Turks and Caicos Islands': 'tc', 'Tuvalu': 'tv',
+      'Uganda': 'ug', 'Ukraine': 'ua', 'United Arab Emirates': 'ae', 'United Kingdom': 'gb',
+      'United States': 'us', 'United States Minor Outlying Islands': 'um', 'Uruguay': 'uy',
+      'Uzbekistan': 'uz', 'Vanuatu': 'vu', 'Venezuela': 've', 'Vietnam': 'vn',
+      'Virgin Islands (British)': 'vg', 'Virgin Islands (U.S.)': 'vi', 'Wallis and Futuna': 'wf',
+      'Western Sahara': 'eh', 'Yemen': 'ye', 'Zambia': 'zm', 'Zimbabwe': 'zw',
       
-      // Central America
-      'Guatemala': 'gt',
-      'Belize': 'bz',
-      'El Salvador': 'sv',
-      'Honduras': 'hn',
-      'Nicaragua': 'ni',
-      'Costa Rica': 'cr',
-      'Panama': 'pa',
-      'Panamá': 'pa',
-      
-      // Caribbean
-      'Cuba': 'cu',
-      'Dominican Republic': 'do',
-      'Haiti': 'ht',
-      'Jamaica': 'jm',
-      'Puerto Rico': 'pr',
-      'Bahamas': 'bs',
-      'Trinidad and Tobago': 'tt',
-      'Barbados': 'bb',
-      'Dominica': 'dm',
-      
-      // South America
-      'Brazil': 'br',
-      'Brasil': 'br',
-      'Argentina': 'ar',
-      'Colombia': 'co',
-      'Peru': 'pe',
-      'Perú': 'pe',
-      'Venezuela': 've',
-      'Chile': 'cl',
-      'Ecuador': 'ec',
-      'Bolivia': 'bo',
-      'Paraguay': 'py',
-      'Uruguay': 'uy',
-      'Guyana': 'gy',
-      'Suriname': 'sr',
-      'French Guiana': 'gf',
-      
-      // Europe
-      'United Kingdom': 'gb',
-      'UK': 'gb',
-      'Great Britain': 'gb',
-      'Germany': 'de',
-      'Deutschland': 'de',
-      'France': 'fr',
-      'Italy': 'it',
-      'Italia': 'it',
-      'Spain': 'es',
-      'España': 'es',
-      'Portugal': 'pt',
-      'Netherlands': 'nl',
-      'Holland': 'nl',
-      'Belgium': 'be',
-      'Switzerland': 'ch',
-      'Austria': 'at',
-      'Sweden': 'se',
-      'Norway': 'no',
-      'Denmark': 'dk',
-      'Finland': 'fi',
-      'Ireland': 'ie',
-      'Poland': 'pl',
-      'Czech Republic': 'cz',
-      'Czechia': 'cz',
-      'Slovakia': 'sk',
-      'Hungary': 'hu',
-      'Romania': 'ro',
-      'Bulgaria': 'bg',
-      'Greece': 'gr',
-      'Turkey': 'tr',
-      'Türkiye': 'tr',
-      'Ukraine': 'ua',
-      'Russia': 'ru',
-      'Belarus': 'by',
-      'Serbia': 'rs',
-      'Croatia': 'hr',
-      'Slovenia': 'si',
-      'Lithuania': 'lt',
-      'Latvia': 'lv',
-      'Estonia': 'ee',
-      'Iceland': 'is',
-      'Malta': 'mt',
-      'Cyprus': 'cy',
-      'Luxembourg': 'lu',
-      'Monaco': 'mc',
-      'Andorra': 'ad',
-      'San Marino': 'sm',
-      'Liechtenstein': 'li',
-      
-      // Asia
-      'China': 'cn',
-      'Japan': 'jp',
-      'South Korea': 'kr',
-      'Korea, Republic of': 'kr',
-      'North Korea': 'kp',
-      'Korea, Democratic People\'s Republic of': 'kp',
-      'India': 'in',
-      'Pakistan': 'pk',
-      'Bangladesh': 'bd',
-      'Indonesia': 'id',
-      'Philippines': 'ph',
-      'Vietnam': 'vn',
-      'Thailand': 'th',
-      'Malaysia': 'my',
-      'Singapore': 'sg',
-      'Israel': 'il',
-      'Saudi Arabia': 'sa',
-      'United Arab Emirates': 'ae',
-      'UAE': 'ae',
-      'Iran': 'ir',
-      'Iraq': 'iq',
-      'Afghanistan': 'af',
-      'Sri Lanka': 'lk',
-      'Nepal': 'np',
-      'Bhutan': 'bt',
-      'Maldives': 'mv',
-      'Mongolia': 'mn',
-      'Taiwan': 'tw',
-      'Hong Kong': 'hk',
-      'Macau': 'mo',
-      'Qatar': 'qa',
-      'Kuwait': 'kw',
-      'Oman': 'om',
-      'Jordan': 'jo',
-      'Lebanon': 'lb',
-      'Syria': 'sy',
-      
-      // Africa
-      'Egypt': 'eg',
-      'South Africa': 'za',
-      'Nigeria': 'ng',
-      'Kenya': 'ke',
-      'Ethiopia': 'et',
-      'Ghana': 'gh',
-      'Morocco': 'ma',
-      'Algeria': 'dz',
-      'Tunisia': 'tn',
-      'Uganda': 'ug',
-      'Tanzania': 'tz',
-      'Sudan': 'sd',
-      'Angola': 'ao',
-      'Mozambique': 'mz',
-      'Madagascar': 'mg',
-      'Cameroon': 'cm',
-      'Ivory Coast': 'ci',
-      'Senegal': 'sn',
-      'Zambia': 'zm',
-      'Zimbabwe': 'zw',
-      'Rwanda': 'rw',
-      'Burundi': 'bi',
-      'Somalia': 'so',
-      'Libya': 'ly',
-      'Congo': 'cg',
-      'DR Congo': 'cd',
-      'Democratic Republic of the Congo': 'cd',
-      
-      // Oceania
-      'Australia': 'au',
-      'New Zealand': 'nz',
-      'Fiji': 'fj',
-      'Papua New Guinea': 'pg',
-      'Solomon Islands': 'sb',
-      'Vanuatu': 'vu',
-      'New Caledonia': 'nc',
-      'French Polynesia': 'pf',
-      'Samoa': 'ws',
-      
-      // Special cases and common API variations
-      'Russian Federation': 'ru',
-      'Viet Nam': 'vn',
-      'Bolivia (Plurinational State of)': 'bo',
-      'Venezuela (Bolivarian Republic of)': 've',
-      'Iran (Islamic Republic of)': 'ir',
-      'Syrian Arab Republic': 'sy',
-      'Libyan Arab Jamahiriya': 'ly',
-      'Moldova, Republic of': 'md',
-      'Macedonia, the former Yugoslav Republic of': 'mk',
-      'Tanzania, United Republic of': 'tz',
-      'Congo, the Democratic Republic of the': 'cd',
-      'Korea, Republic of': 'kr',
-      'Lao People\'s Democratic Republic': 'la',
-      'Brunei Darussalam': 'bn',
-      'Myanmar': 'mm',
-      'Timor-Leste': 'tl',
-      'Palestine, State of': 'ps',
-      'Cabo Verde': 'cv',
-      'Côte d\'Ivoire': 'ci',
-      'Eswatini': 'sz',
-      'São Tomé and Príncipe': 'st'
+      // Common variations
+      'USA': 'us', 'UK': 'gb', 'UAE': 'ae', 'DR Congo': 'cd'
     };
 
-    // Try exact match first
-    if (countryMap[countryName]) {
-      return countryMap[countryName];
-    }
-
-    // Try case-insensitive match
-    const lowerCountryName = countryName.toLowerCase();
-    for (const [key, value] of Object.entries(countryMap)) {
-      if (key.toLowerCase() === lowerCountryName) {
-        return value;
+    // Búsqueda case-insensitive
+    const normalizedCountry = countryName.toLowerCase();
+    for (const [name, code] of Object.entries(countryMap)) {
+      if (name.toLowerCase() === normalizedCountry) {
+        return code;
       }
     }
-
-    // Try partial match for common patterns
-    for (const [key, value] of Object.entries(countryMap)) {
-      if (key.toLowerCase().includes(lowerCountryName) || lowerCountryName.includes(key.toLowerCase())) {
-        return value;
-      }
-    }
-
-    // If still not found, use REST Countries API as fallback
-    return this.getCountryCodeFromAPI(countryName).then(code => code || 'un');
-  }
-
-  async getCountryCodeFromAPI(countryName) {
-    try {
-      const response = await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(countryName)}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data && data[0]) {
-          return data[0].cca2.toLowerCase();
-        }
-      }
-    } catch (error) {
-      console.log('REST Countries API error for:', countryName, error);
-    }
-    return 'un';
-  }
-
-  getDefaultFlagUrl() {
-    // Simple UN-style flag as fallback
-    return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCA0MCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjI0IiBmaWxsPSIjMDA2YWFmIi8+CjxjaXJjbGUgY3g9IjIwIiBjeT0iMTIiIHI9IjgiIGZpbGw9IiNmZmYiLz4KPC9zdmc+';
+    
+    return 'un'; // United Nations como fallback
   }
 
   updateUserRank(leaderboard) {
@@ -541,20 +487,3 @@ window.addEventListener('error', (event) => {
 window.addEventListener('unhandledrejection', (event) => {
   console.error('💥 Unhandled promise rejection:', event.reason);
 });
-
-
-// Flag cache system
-const flagCache = new Map();
-
-// Preload common flags
-function preloadCommonFlags() {
-  const commonCountries = ['us', 'mx', 'es', 'fr', 'de', 'it', 'gb', 'jp', 'cn', 'in', 'br', 'ar', 'cl', 'co'];
-  commonCountries.forEach(code => {
-    const img = new Image();
-    img.src = `https://flagcdn.com/w40/${code}.png`;
-    flagCache.set(code, img.src);
-  });
-}
-
-// Initialize preloading
-document.addEventListener('DOMContentLoaded', preloadCommonFlags);
