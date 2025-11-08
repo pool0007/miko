@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PopCat Clone - Global Click Challenge</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🌎 POPCAT CLONE</h1>
+      <div class="stats">
+        <div class="stat">
+          <span class="label">Tu País:</span>
+          <span id="userCountry">Cargando...</span>
+        </div>
+        <div class="stat">
+          <span class="label">Tus Clicks:</span>
+          <span id="userClicks">0</span>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <div class="cat-container" id="catContainer">
+        <div class="cat-images">
+          <img src="https://i.imgur.com/jlNnTtF.png" class="cat-img cat-closed" alt="Cat Closed" />
+          <img src="https://i.imgur.com/mN7Ncbz.png" class="cat-img cat-open" alt="Cat Open" />
+        </div>
+        <div class="click-effect">+1</div>
+      </div>
+      
+      <div class="click-counter">
+        <span id="totalClicks">0</span>
+        <span class="label">clicks totales</span>
+      </div>
+      
+      <div class="instructions">
+        ¡Haz clic en el gato para sumar puntos a tu país! 🎯
+      </div>
+    </main>
+
+    <section class="leaderboard-section">
+      <h2>🏆 TABLA DE CLASIFICACIÓN GLOBAL</h2>
+      <div id="leaderboard" class="leaderboard">
+        <div class="leaderboard-header">
+          <span>Posición</span>
+          <span>País</span>
+          <span>Clicks</span>
+        </div>
+        <div id="leaderboardBody" class="leaderboard-body">
+          <!-- Leaderboard items will be loaded here -->
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <p>PopCat Clone - Desplegado en Vercel con Neon PostgreSQL</p>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
