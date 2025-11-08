@@ -3,13 +3,22 @@ class PopCatGame {
     this.userCountry = null;
     this.userClicks = 0;
     this.totalClicks = 0;
+    this.leaderboardData = [];
     this.catContainer = document.getElementById('catContainer');
     this.totalClicksElement = document.getElementById('totalClicks');
-    this.userClicksElement = document.getElementById('userClicks');
-    this.userCountryElement = document.getElementById('userCountry');
     this.leaderboardBody = document.getElementById('leaderboardBody');
     
+    // Dashboard elements
+    this.dashboardMinimized = document.getElementById('dashboardMinimized');
+    this.dashboardExpanded = document.getElementById('dashboardExpanded');
+    this.miniTotalClicks = document.getElementById('miniTotalClicks');
+    this.miniTopCountry = document.getElementById('miniTopCountry');
+    this.userCountryStat = document.getElementById('userCountryStat');
+    this.userClicksStat = document.getElementById('userClicksStat');
+    this.userRankStat = document.getElementById('userRankStat');
+    
     this.baseURL = window.location.origin;
+    this.isDashboardExpanded = false;
     
     this.init();
   }
@@ -20,19 +29,7 @@ class PopCatGame {
     this.setupEventListeners();
     await this.loadLeaderboard();
     this.startAutoRefresh();
-    
-    // Test API connection
-    await this.testConnection();
-  }
-
-  async testConnection() {
-    try {
-      const response = await fetch(`${this.baseURL}/api/health`);
-      const data = await response.json();
-      console.log('✅ API Health:', data);
-    } catch (error) {
-      console.error('❌ API Health check failed:', error);
-    }
+    this.updateDashboardStats();
   }
 
   async detectCountry() {
@@ -41,18 +38,16 @@ class PopCatGame {
       const res = await fetch('https://ipapi.co/json/');
       const data = await res.json();
       this.userCountry = data.country_name || 'Desconocido';
-      this.userCountryElement.textContent = this.userCountry;
+      this.userCountryStat.textContent = this.userCountry;
       console.log('✅ Country detected:', this.userCountry);
     } catch (error) {
       console.error('❌ Error detecting country:', error);
       this.userCountry = 'Desconocido';
-      this.userCountryElement.textContent = 'No detectado';
+      this.userCountryStat.textContent = 'No detectado';
     }
   }
 
   setupEventListeners() {
-    console.log('🎯 Setting up event listeners...');
-    
     // Click en el gato
     this.catContainer.addEventListener('click', (e) => {
       e.preventDefault();
@@ -67,11 +62,32 @@ class PopCatGame {
       }
     });
     
+    // Dashboard toggle
+    document.getElementById('dashboardToggle').addEventListener('click', () => {
+      this.toggleDashboard();
+    });
+    
+    document.getElementById('dashboardClose').addEventListener('click', () => {
+      this.toggleDashboard();
+    });
+    
     // Touch para móviles
     this.catContainer.addEventListener('touchstart', (e) => {
       e.preventDefault();
       this.handleClick();
     }, { passive: false });
+  }
+
+  toggleDashboard() {
+    this.isDashboardExpanded = !this.isDashboardExpanded;
+    
+    if (this.isDashboardExpanded) {
+      this.dashboardMinimized.style.display = 'none';
+      this.dashboardExpanded.style.display = 'block';
+    } else {
+      this.dashboardMinimized.style.display = 'block';
+      this.dashboardExpanded.style.display = 'none';
+    }
   }
 
   async handleClick() {
@@ -87,10 +103,9 @@ class PopCatGame {
     
     // Contador local
     this.userClicks++;
-    this.userClicksElement.textContent = this.userClicks.toLocaleString();
+    this.userClicksStat.textContent = this.userClicks.toLocaleString();
 
     try {
-      console.log('📤 Sending click to server...');
       const response = await fetch(`${this.baseURL}/api/click`, {
         method: 'POST',
         headers: { 
@@ -100,29 +115,22 @@ class PopCatGame {
         body: JSON.stringify({ country: this.userCountry }),
       });
 
-      console.log('📥 Server response status:', response.status);
-      
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const data = await response.json();
-      console.log('✅ Click response:', data);
 
       if (data.success) {
         this.updateLeaderboard(data.leaderboard);
         this.updateTotalClicks(data.leaderboard);
+        this.updateDashboardStats();
         console.log('🎯 Click registered successfully');
       } else {
         console.error('❌ Server returned error:', data.error);
       }
     } catch (error) {
       console.error('❌ Error sending click:', error);
-      // Mostrar error al usuario
-      this.showError('Error al enviar click. Recargando...');
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
     }
   }
 
@@ -153,7 +161,6 @@ class PopCatGame {
 
   async loadLeaderboard() {
     try {
-      console.log('📊 Loading leaderboard...');
       const response = await fetch(`${this.baseURL}/api/leaderboard`);
       
       if (!response.ok) {
@@ -161,11 +168,12 @@ class PopCatGame {
       }
       
       const data = await response.json();
-      console.log('✅ Leaderboard data:', data);
 
       if (data.success) {
+        this.leaderboardData = data.leaderboard;
         this.updateLeaderboard(data.leaderboard);
         this.updateTotalClicks(data.leaderboard);
+        this.updateDashboardStats();
         console.log('📈 Leaderboard updated successfully');
       } else {
         console.error('❌ Leaderboard error:', data.error);
@@ -177,8 +185,6 @@ class PopCatGame {
 
   updateLeaderboard(leaderboard) {
     if (!this.leaderboardBody) return;
-    
-    console.log('🔄 Updating leaderboard UI with', leaderboard.length, 'countries');
     
     this.leaderboardBody.innerHTML = '';
 
@@ -204,42 +210,77 @@ class PopCatGame {
         item.style.border = '1px solid rgba(255, 235, 59, 0.5)';
       }
       
+      // Obtener código de país para la bandera
+      const countryCode = this.getCountryCode(row.country);
+      const flagUrl = `https://flagcdn.com/w40/${countryCode}.png`;
+      
       item.innerHTML = `
-        <span class="rank">#${index + 1}</span>
-        <span class="country">${row.country}</span>
+        <span class="rank">${index + 1}</span>
+        <span class="country">
+          <img src="${flagUrl}" alt="${row.country}" class="country-flag" onerror="this.style.display='none'">
+          ${row.country}
+        </span>
         <span class="clicks">${parseInt(row.total_clicks).toLocaleString()}</span>
       `;
       
       this.leaderboardBody.appendChild(item);
     });
+
+    // Actualizar ranking del usuario
+    this.updateUserRank(leaderboard);
+  }
+
+  getCountryCode(countryName) {
+    const countryMap = {
+      'Argentina': 'ar',
+      'Chile': 'cl',
+      'España': 'es',
+      'Mexico': 'mx',
+      'Estados Unidos': 'us',
+      'United States': 'us',
+      'Brazil': 'br',
+      'Colombia': 'co',
+      'Peru': 'pe',
+      'France': 'fr',
+      'Germany': 'de',
+      'Italy': 'it',
+      'United Kingdom': 'gb',
+      'Japan': 'jp',
+      'China': 'cn',
+      'India': 'in',
+      'Australia': 'au',
+      'Canada': 'ca',
+      'Russia': 'ru'
+    };
+    
+    return countryMap[countryName] || 'un';
+  }
+
+  updateUserRank(leaderboard) {
+    const userIndex = leaderboard.findIndex(row => row.country === this.userCountry);
+    if (userIndex !== -1) {
+      this.userRankStat.textContent = `#${userIndex + 1}`;
+    } else {
+      this.userRankStat.textContent = '-';
+    }
   }
 
   updateTotalClicks(leaderboard) {
     this.totalClicks = leaderboard.reduce((sum, row) => sum + parseInt(row.total_clicks || 0), 0);
     this.totalClicksElement.textContent = this.totalClicks.toLocaleString();
-    console.log('🔢 Total clicks updated:', this.totalClicks);
   }
 
-  showError(message) {
-    // Crear mensaje de error temporal
-    const errorDiv = document.createElement('div');
-    errorDiv.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: #ff4444;
-      color: white;
-      padding: 15px 20px;
-      border-radius: 8px;
-      z-index: 1000;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    `;
-    errorDiv.textContent = message;
-    document.body.appendChild(errorDiv);
+  updateDashboardStats() {
+    // Actualizar clicks totales
+    this.miniTotalClicks.textContent = this.totalClicks.toLocaleString();
     
-    setTimeout(() => {
-      document.body.removeChild(errorDiv);
-    }, 3000);
+    // Actualizar país líder
+    if (this.leaderboardData.length > 0) {
+      const topCountry = this.leaderboardData[0];
+      this.miniTopCountry.textContent = topCountry.country;
+    } else {
+      this.miniTopCountry.textContent = '-';
+    }
   }
 
   startAutoRefresh() {
