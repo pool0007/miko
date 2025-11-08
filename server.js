@@ -26,87 +26,33 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// Initialize database - SCHEMA CORREGIDO
+// Initialize database
 async function initializeDatabase() {
   try {
-    // Verificar si la tabla existe y tiene las columnas correctas
-    const tableCheck = await pool.query(`
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name = 'clicks'
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS clicks (
+        country TEXT PRIMARY KEY,
+        total_clicks BIGINT DEFAULT 0
+      );
     `);
-    
-    const existingColumns = tableCheck.rows.map(row => row.column_name);
-    
-    if (existingColumns.length === 0) {
-      // Crear tabla si no existe
-      await pool.query(`
-        CREATE TABLE clicks (
-          country TEXT PRIMARY KEY,
-          total_clicks BIGINT DEFAULT 0
-        );
-      `);
-      console.log('✅ Table created successfully');
-    } else if (existingColumns.includes('last_updated')) {
-      // Si existe la columna problemática, crear tabla temporal
-      console.log('🔄 Fixing database schema...');
-      
-      // Crear tabla temporal
-      await pool.query(`
-        CREATE TABLE IF NOT EXISTS clicks_new (
-          country TEXT PRIMARY KEY,
-          total_clicks BIGINT DEFAULT 0
-        );
-      `);
-      
-      // Copiar datos
-      await pool.query(`
-        INSERT INTO clicks_new (country, total_clicks)
-        SELECT country, total_clicks FROM clicks
-        ON CONFLICT (country) DO NOTHING;
-      `);
-      
-      // Eliminar tabla vieja
-      await pool.query('DROP TABLE clicks');
-      
-      // Renombrar tabla nueva
-      await pool.query('ALTER TABLE clicks_new RENAME TO clicks');
-      
-      console.log('✅ Database schema fixed');
-    }
-    
-    console.log('✅ Database initialized successfully');
-    
+    console.log('✅ Database initialized');
   } catch (err) {
     console.error('❌ Database initialization error:', err);
-    
-    // Intentar crear tabla básica como fallback
-    try {
-      await pool.query(`
-        CREATE TABLE IF NOT EXISTS clicks (
-          country TEXT PRIMARY KEY,
-          total_clicks BIGINT DEFAULT 0
-        );
-      `);
-      console.log('✅ Fallback table creation successful');
-    } catch (fallbackError) {
-      console.error('❌ Fallback also failed:', fallbackError);
-    }
   }
 }
 
-// Routes - VERSIÓN SIMPLIFICADA Y ROBUSTA
+// Routes
 app.post('/api/click', async (req, res) => {
   console.log('📥 Received click request:', req.body);
   
   const { country } = req.body;
 
   if (!country) {
-    return res.status(400).json({ success: false, error: "Falta el país" });
+    return res.status(400).json({ success: false, error: "Country is required" });
   }
 
   try {
-    // Versión simplificada sin last_updated
+    // Add 1 click for the country
     const updateResult = await pool.query(
       `INSERT INTO clicks (country, total_clicks)
        VALUES ($1, 1)
@@ -118,7 +64,7 @@ app.post('/api/click', async (req, res) => {
 
     console.log('✅ Click added for country:', country);
 
-    // Obtener leaderboard actualizado
+    // Get updated leaderboard
     const result = await pool.query(
       "SELECT country, total_clicks FROM clicks ORDER BY total_clicks DESC LIMIT 20"
     );
@@ -131,7 +77,7 @@ app.post('/api/click', async (req, res) => {
     });
     
   } catch (err) {
-    console.error("❌ Error al sumar click:", err.message);
+    console.error("❌ Error adding click:", err.message);
     res.status(500).json({ 
       success: false, 
       error: err.message
@@ -150,7 +96,7 @@ app.get('/api/leaderboard', async (req, res) => {
       leaderboard: result.rows,
     });
   } catch (err) {
-    console.error("❌ Error al obtener leaderboard:", err.message);
+    console.error("❌ Error getting leaderboard:", err.message);
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -159,17 +105,15 @@ app.get('/api/test-db', async (req, res) => {
   try {
     const result = await pool.query("SELECT NOW()");
     const tableCheck = await pool.query("SELECT COUNT(*) as count FROM clicks");
-    const sampleData = await pool.query("SELECT * FROM clicks ORDER BY total_clicks DESC LIMIT 5");
     
     res.status(200).json({
       success: true,
-      message: "Conexión a la base de datos exitosa",
+      message: "Database connection successful",
       timestamp: result.rows[0].now,
-      total_countries: tableCheck.rows[0].count,
-      sample_data: sampleData.rows
+      total_countries: tableCheck.rows[0].count
     });
   } catch (err) {
-    console.error("❌ Error al conectar con la base de datos:", err.message);
+    console.error("❌ Error connecting to database:", err.message);
     res.status(500).json({
       success: false,
       error: err.message,
@@ -210,8 +154,5 @@ initializeDatabase().then(() => {
   app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
     console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`🌐 Frontend: http://localhost:${PORT}`);
-    console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
-    console.log(`🗄️ DB test: http://localhost:${PORT}/api/test-db`);
   });
 });
