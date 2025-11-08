@@ -224,7 +224,7 @@ class PopCatGame {
     const medal = this.getMedalEmoji(index + 1);
     
     item.innerHTML = `
-      <span class="rank">${medal}${index + 1}</span>
+      <span class="rank">${medal}</span>
       <span class="country">
         <img src="${flagUrl}" alt="${row.country}" class="country-flag" 
              onerror="this.src='${this.getDefaultFlagUrl()}'">
@@ -238,19 +238,23 @@ class PopCatGame {
 
   getMedalEmoji(rank) {
     switch(rank) {
-      case 1: return '🥇 ';
-      case 2: return '🥈 ';
-      case 3: return '🥉 ';
-      default: return '';
+      case 1: return '🥇';
+      case 2: return '🥈';
+      case 3: return '🥉';
+      default: return rank;
     }
   }
 
   getCountryCode(countryName) {
+    // Comprehensive country mapping with common variations
     const countryMap = {
       // North America
       'United States': 'us',
+      'United States of America': 'us',
+      'USA': 'us',
       'Canada': 'ca',
       'Mexico': 'mx',
+      'México': 'mx',
       
       // Central America
       'Guatemala': 'gt',
@@ -260,6 +264,7 @@ class PopCatGame {
       'Nicaragua': 'ni',
       'Costa Rica': 'cr',
       'Panama': 'pa',
+      'Panamá': 'pa',
       
       // Caribbean
       'Cuba': 'cu',
@@ -269,12 +274,16 @@ class PopCatGame {
       'Puerto Rico': 'pr',
       'Bahamas': 'bs',
       'Trinidad and Tobago': 'tt',
+      'Barbados': 'bb',
+      'Dominica': 'dm',
       
       // South America
       'Brazil': 'br',
+      'Brasil': 'br',
       'Argentina': 'ar',
       'Colombia': 'co',
       'Peru': 'pe',
+      'Perú': 'pe',
       'Venezuela': 've',
       'Chile': 'cl',
       'Ecuador': 'ec',
@@ -287,12 +296,18 @@ class PopCatGame {
       
       // Europe
       'United Kingdom': 'gb',
+      'UK': 'gb',
+      'Great Britain': 'gb',
       'Germany': 'de',
+      'Deutschland': 'de',
       'France': 'fr',
       'Italy': 'it',
+      'Italia': 'it',
       'Spain': 'es',
+      'España': 'es',
       'Portugal': 'pt',
       'Netherlands': 'nl',
+      'Holland': 'nl',
       'Belgium': 'be',
       'Switzerland': 'ch',
       'Austria': 'at',
@@ -303,21 +318,39 @@ class PopCatGame {
       'Ireland': 'ie',
       'Poland': 'pl',
       'Czech Republic': 'cz',
+      'Czechia': 'cz',
       'Slovakia': 'sk',
       'Hungary': 'hu',
       'Romania': 'ro',
       'Bulgaria': 'bg',
       'Greece': 'gr',
       'Turkey': 'tr',
+      'Türkiye': 'tr',
       'Ukraine': 'ua',
       'Russia': 'ru',
       'Belarus': 'by',
+      'Serbia': 'rs',
+      'Croatia': 'hr',
+      'Slovenia': 'si',
+      'Lithuania': 'lt',
+      'Latvia': 'lv',
+      'Estonia': 'ee',
+      'Iceland': 'is',
+      'Malta': 'mt',
+      'Cyprus': 'cy',
+      'Luxembourg': 'lu',
+      'Monaco': 'mc',
+      'Andorra': 'ad',
+      'San Marino': 'sm',
+      'Liechtenstein': 'li',
       
       // Asia
       'China': 'cn',
       'Japan': 'jp',
       'South Korea': 'kr',
+      'Korea, Republic of': 'kr',
       'North Korea': 'kp',
+      'Korea, Democratic People\'s Republic of': 'kp',
       'India': 'in',
       'Pakistan': 'pk',
       'Bangladesh': 'bd',
@@ -330,9 +363,24 @@ class PopCatGame {
       'Israel': 'il',
       'Saudi Arabia': 'sa',
       'United Arab Emirates': 'ae',
+      'UAE': 'ae',
       'Iran': 'ir',
       'Iraq': 'iq',
       'Afghanistan': 'af',
+      'Sri Lanka': 'lk',
+      'Nepal': 'np',
+      'Bhutan': 'bt',
+      'Maldives': 'mv',
+      'Mongolia': 'mn',
+      'Taiwan': 'tw',
+      'Hong Kong': 'hk',
+      'Macau': 'mo',
+      'Qatar': 'qa',
+      'Kuwait': 'kw',
+      'Oman': 'om',
+      'Jordan': 'jo',
+      'Lebanon': 'lb',
+      'Syria': 'sy',
       
       // Africa
       'Egypt': 'eg',
@@ -350,6 +398,18 @@ class PopCatGame {
       'Angola': 'ao',
       'Mozambique': 'mz',
       'Madagascar': 'mg',
+      'Cameroon': 'cm',
+      'Ivory Coast': 'ci',
+      'Senegal': 'sn',
+      'Zambia': 'zm',
+      'Zimbabwe': 'zw',
+      'Rwanda': 'rw',
+      'Burundi': 'bi',
+      'Somalia': 'so',
+      'Libya': 'ly',
+      'Congo': 'cg',
+      'DR Congo': 'cd',
+      'Democratic Republic of the Congo': 'cd',
       
       // Oceania
       'Australia': 'au',
@@ -357,36 +417,77 @@ class PopCatGame {
       'Fiji': 'fj',
       'Papua New Guinea': 'pg',
       'Solomon Islands': 'sb',
+      'Vanuatu': 'vu',
+      'New Caledonia': 'nc',
+      'French Polynesia': 'pf',
+      'Samoa': 'ws',
       
-      // Common variations
-      'USA': 'us',
-      'UK': 'gb',
-      'UAE': 'ae',
-      'DR Congo': 'cd',
-      'Congo': 'cg',
-      'South Korea': 'kr',
-      'North Korea': 'kp',
-      'Czechia': 'cz',
-      'Slovakia': 'sk',
-      'Macedonia': 'mk',
-      'Bosnia': 'ba',
-      'Serbia': 'rs',
-      'Croatia': 'hr',
-      'Slovenia': 'si',
-      'Montenegro': 'me',
-      'Kosovo': 'xk',
-      'Palestine': 'ps',
-      'Taiwan': 'tw',
-      'Hong Kong': 'hk',
-      'Macau': 'mo'
+      // Special cases and common API variations
+      'Russian Federation': 'ru',
+      'Viet Nam': 'vn',
+      'Bolivia (Plurinational State of)': 'bo',
+      'Venezuela (Bolivarian Republic of)': 've',
+      'Iran (Islamic Republic of)': 'ir',
+      'Syrian Arab Republic': 'sy',
+      'Libyan Arab Jamahiriya': 'ly',
+      'Moldova, Republic of': 'md',
+      'Macedonia, the former Yugoslav Republic of': 'mk',
+      'Tanzania, United Republic of': 'tz',
+      'Congo, the Democratic Republic of the': 'cd',
+      'Korea, Republic of': 'kr',
+      'Lao People\'s Democratic Republic': 'la',
+      'Brunei Darussalam': 'bn',
+      'Myanmar': 'mm',
+      'Timor-Leste': 'tl',
+      'Palestine, State of': 'ps',
+      'Cabo Verde': 'cv',
+      'Côte d\'Ivoire': 'ci',
+      'Eswatini': 'sz',
+      'São Tomé and Príncipe': 'st'
     };
-    
-    return countryMap[countryName] || 'un';
+
+    // Try exact match first
+    if (countryMap[countryName]) {
+      return countryMap[countryName];
+    }
+
+    // Try case-insensitive match
+    const lowerCountryName = countryName.toLowerCase();
+    for (const [key, value] of Object.entries(countryMap)) {
+      if (key.toLowerCase() === lowerCountryName) {
+        return value;
+      }
+    }
+
+    // Try partial match for common patterns
+    for (const [key, value] of Object.entries(countryMap)) {
+      if (key.toLowerCase().includes(lowerCountryName) || lowerCountryName.includes(key.toLowerCase())) {
+        return value;
+      }
+    }
+
+    // If still not found, use REST Countries API as fallback
+    return this.getCountryCodeFromAPI(countryName).then(code => code || 'un');
+  }
+
+  async getCountryCodeFromAPI(countryName) {
+    try {
+      const response = await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(countryName)}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data[0]) {
+          return data[0].cca2.toLowerCase();
+        }
+      }
+    } catch (error) {
+      console.log('REST Countries API error for:', countryName, error);
+    }
+    return 'un';
   }
 
   getDefaultFlagUrl() {
-    // Generic flag as fallback
-    return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCA0MCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjI0IiBmaWxsPSIjRkZGIi8+CjxwYXRoIGQ9Ik0wIDBINDBWMjRIMHoiIGZpbGw9IiNGRkYiLz4KPHBhdGggZD0iTTE2IDBIMjRWMjRIMTZWIiBmaWxsPSIjMDA2YWFmIi8+CjxwYXRoIGQ9Ik0wIDhINDBWMTZIMFY4WiIgZmlsbD0iIzAwNmFhZiIvPgo8L3N2Zz4K';
+    // Simple UN-style flag as fallback
+    return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCA0MCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjI0IiBmaWxsPSIjMDA2YWFmIi8+CjxjaXJjbGUgY3g9IjIwIiBjeT0iMTIiIHI9IjgiIGZpbGw9IiNmZmYiLz4KPC9zdmc+';
   }
 
   updateUserRank(leaderboard) {
