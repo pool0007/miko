@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -11,7 +11,7 @@
   <div class="container">
     <header>
       <h1>🌎 POPCAT CLONE</h1>
-      <div class="subtitle">¡Haz clic en el gato y compite globalmente!</div>
+      <div class="subtitle">Click the cat and compete globally!</div>
     </header>
 
     <main>
@@ -25,68 +25,68 @@
       
       <div class="click-counter">
         <span id="totalClicks">0</span>
-        <span class="label">clicks totales</span>
+        <span class="label">total clicks</span>
       </div>
       
       <div class="instructions">
-        ¡Haz clic en el gato para sumar puntos a tu país! 🎯
+       
       </div>
     </main>
   </div>
 
-  <!-- Dashboard Minimizado -->
+  <!-- Minimized Dashboard -->
   <div class="dashboard-minimized" id="dashboardMinimized">
     <div class="dashboard-header" id="dashboardToggle">
       <div class="dashboard-stats">
         <div class="stat-mini">
           <span class="value" id="miniTotalClicks">0</span>
-          <span class="label">Clicks Totales</span>
+          <span class="label">Total Clicks</span>
         </div>
         <div class="stat-mini">
           <span class="value" id="miniTopCountry">-</span>
-          <span class="label">País Líder</span>
+          <span class="label">Leading Country</span>
         </div>
       </div>
       <div class="toggle-arrow">▼</div>
     </div>
   </div>
 
-  <!-- Dashboard Expandido -->
+  <!-- Expanded Dashboard -->
   <div class="dashboard-expanded" id="dashboardExpanded" style="display: none;">
     <div class="dashboard-header" id="dashboardClose">
-      <h2>📊 Dashboard Global</h2>
+      <h2>📊 Global Dashboard</h2>
       <div class="toggle-arrow">▼</div>
     </div>
     
     <div class="dashboard-content">
       <div class="leaderboard-section">
-        <h2>🏆 Leaderboard Global</h2>
+        <h2>🏆 Global Leaderboard</h2>
         <div class="leaderboard">
           <div class="leaderboard-header">
             <span>#</span>
-            <span>País</span>
+            <span>Country</span>
             <span>Clicks</span>
           </div>
           <div id="leaderboardBody" class="leaderboard-body">
-            <!-- Leaderboard items will be loaded here -->
+       
           </div>
         </div>
       </div>
       
       <div class="stats-section">
-        <h2>📈 Tus Estadísticas</h2>
+        <h2>📈 Your Statistics</h2>
         <div class="user-stats">
           <div class="stat-card">
             <span class="value" id="userCountryStat">-</span>
-            <span class="label">Tu País</span>
+            <span class="label">Your Country</span>
           </div>
           <div class="stat-card">
             <span class="value" id="userClicksStat">0</span>
-            <span class="label">Tus Clicks</span>
+            <span class="label">Your Clicks</span>
           </div>
           <div class="stat-card">
             <span class="value" id="userRankStat">-</span>
-            <span class="label">Tu Posición</span>
+            <span class="label">Your Rank</span>
           </div>
         </div>
       </div>
