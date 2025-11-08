@@ -101,6 +101,39 @@ app.get('/api/leaderboard', async (req, res) => {
   }
 });
 
+app.get('/api/ipinfo', async (req, res) => {
+  try {
+    // Usar ipapi.co que es más confiable
+    const response = await fetch(`https://ipapi.co/json/`);
+    const data = await response.json();
+    
+    res.json({
+      country: data.country_name,
+      country_code: data.country_code,
+      ip: data.ip,
+      city: data.city,
+      region: data.region
+    });
+  } catch (error) {
+    // Fallback a otra API
+    try {
+      const response = await fetch('https://api.country.is/');
+      const data = await response.json();
+      res.json({
+        country: data.country,
+        country_code: data.country,
+        ip: 'Unknown'
+      });
+    } catch (fallbackError) {
+      res.json({
+        country: 'Unknown',
+        country_code: 'US',
+        ip: 'Unknown'
+      });
+    }
+  }
+});
+
 app.get('/api/test-db', async (req, res) => {
   try {
     const result = await pool.query("SELECT NOW()");
