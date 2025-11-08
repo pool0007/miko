@@ -541,3 +541,20 @@ window.addEventListener('error', (event) => {
 window.addEventListener('unhandledrejection', (event) => {
   console.error('💥 Unhandled promise rejection:', event.reason);
 });
+
+
+// Flag cache system
+const flagCache = new Map();
+
+// Preload common flags
+function preloadCommonFlags() {
+  const commonCountries = ['us', 'mx', 'es', 'fr', 'de', 'it', 'gb', 'jp', 'cn', 'in', 'br', 'ar', 'cl', 'co'];
+  commonCountries.forEach(code => {
+    const img = new Image();
+    img.src = `https://flagcdn.com/w40/${code}.png`;
+    flagCache.set(code, img.src);
+  });
+}
+
+// Initialize preloading
+document.addEventListener('DOMContentLoaded', preloadCommonFlags);
